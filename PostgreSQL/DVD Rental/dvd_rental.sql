@@ -267,3 +267,6 @@ SELECT
 FROM products AS p1
 INNER JOIN product_group AS pg
 USING(group_id);
+
+
+--check
