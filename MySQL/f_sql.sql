@@ -1,4 +1,4 @@
--- Active: 1789744257302@@127.0.0.1@3306@parks_and_recreation
+
 DROP DATABASE IF EXISTS test;
 
 CREATE DATABASE `Parks_and_Recreation`;
@@ -70,6 +70,179 @@ VALUES
 ('Healthcare'),
 ('Library'),
 ('Finance');
+
+
+SELECT first_name, last_name, age
+FROM employee_demographics
+UNION ALL
+SELECT first_name, last_name, age
+FROM employee_salary;
+
+SELECT first_name, last_name, 'Old' AS label
+FROM employee_demographics
+WHERE age > 50;
+
+
+
+SELECT 
+	first_name,
+    last_name,
+    salary,
+    CASE
+		WHEN salary < 50000 THEN salary * 1.05
+        WHEN salary >= 50000 THEN salary * 1.07
+    END AS new_salary,
+    CASE
+		WHEN dept_id = 6 THEN salary * 0.10
+        ELSE 0
+    END AS bonus
+FROM employee_salary;
+
+
+SELECT *,
+		(new_salary + bonus) AS new_total_salary
+FROM (
+    SELECT 
+        first_name,
+        last_name,
+        salary,
+        CASE
+            WHEN salary < 50000 THEN salary * 1.05
+            WHEN salary >= 50000 THEN salary * 1.07
+        END AS new_salary,
+        CASE
+            WHEN dept_id = 6 THEN salary * 0.10
+            ELSE 0
+        END AS bonus
+	FROM employee_salary
+) t;
+
+SELECT
+	gender,
+	AVG(salary)
+FROM employee_demographics AS ed
+JOIN employee_salary AS es
+ON ed.employee_id = es.employee_id
+GROUP BY gender;
+
+SELECT
+	ed.first_name,
+    ed.last_name,
+	gender,
+	AVG(salary)
+    OVER(PARTITION BY gender)
+FROM employee_demographics AS ed
+JOIN employee_salary AS es
+ON ed.employee_id = es.employee_id;
+
+SELECT
+	ed.first_name,
+    ed.last_name,
+	gender,
+    es.salary,
+	SUM(salary)
+    OVER(PARTITION BY gender order by ed.employee_id) AS rolling_total
+FROM employee_demographics AS ed
+JOIN employee_salary AS es
+ON ed.employee_id = es.employee_id;
+    
+
+SELECT
+	ed.employee_id,
+	ed.first_name,
+    ed.last_name,
+	gender,
+    es.salary,
+	ROW_NUMBER() OVER(PARTITION BY gender ORDER BY salary DESC) AS row_num,
+    RANK() OVER(PARTITION BY gender ORDER BY salary DESC) AS rank_s,
+    DENSE_RANK() OVER(PARTITION BY gender ORDER BY salary DESC) AS dense_rank_s
+FROM employee_demographics AS ed
+JOIN employee_salary AS es
+ON ed.employee_id = es.employee_id;
+
+CREATE PROCEDURE large_salary()
+SELECT *
+FROM employee_salary
+WHERE salary >= 50000;
+
+
+CREATE PROCEDURE large_salary()
+SELECT *
+FROM employee_salary
+WHERE salary >= 50000;
+
+SELECT *
+FROM employee_salary
+WHERE salary >= 10000;
+
+
+
+CALL large_salary()
+    
+DELIMITER $$
+CREATE PROCEDURE large_salary_3()
+BEGIN
+	SELECT *
+	FROM employee_salary
+	WHERE salary >= 50000;
+
+	SELECT *
+	FROM employee_salary
+	WHERE salary >= 10000;
+END $$
+DELIMITER ;
+
+
+CALL large_salary_3();
+
+
+SELECT *
+FROM employee_demographics;
+
+SELECT *
+FROM employee_salary;
+
+
+DELIMITER $$
+CREATE TRIGGER employee_insert
+	AFTER INSERT ON employee_salary
+    FOR EACH ROW
+BEGIN
+	INSERT INTO employee_demographics (employee_id, first_name, last_name)
+    VALUES (NEW.employee_id, NEW.first_name, NEW.last_name);
+END $$
+DELIMITER ;
+
+
+INSERT INTO employee_salary (employee_id, first_name, last_name, occupation, salary, dept_id)
+VALUES (13, 'Jon', 'devid', 'data analyst', 1000000, NULL);
+
+
+------- events
+
+SELECT *
+FROM employee_demographics;
+
+DELIMITER $$
+CREATE EVENT delete_retirees
+ON SCHEDULE EVERY 30 SECOND
+DO
+BEGIN
+	DELETE
+	FROM employee_demographics
+    WHERE age > 60;
+END $$
+DELIMITER ;
+
+SHOW VARIABLES LIKE 'event%';
+
+
+
+
+
+
+
+
 
 
 
